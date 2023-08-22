@@ -1,0 +1,46 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, name, nickname, birthdate, stack FROM persons WHERE (search ILIKE CONCAT('%', $1::text, '%')) LIMIT 50",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "nickname",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "birthdate",
+        "type_info": "Date"
+      },
+      {
+        "ordinal": 4,
+        "name": "stack",
+        "type_info": "TextArray"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "98f4bbc56dc0dc0e0a08383f6dcf6e3c1236257eaf8c4fafd2f83323d66cff98"
+}
