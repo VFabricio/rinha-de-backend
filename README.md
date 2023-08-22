@@ -57,6 +57,25 @@ Eventualmente quero voltar para essa questão, dado que essa escolha entre a col
 
 A última sutileza é que precisei definir uma função para fazer o join da array de stacks, porque a `array_to_text` do Postgres não tem a volatilidade correta para ser utiliza em uma coluna computada.
 
+No final das contas, o grande gargalo de performance está sendo o banco.
+Por isso, ele está recebendo a maior parte dos recursos no docker-compose.
+Uma otimização crucial foi aumentar o número de conexões disponíveis na connection pool.
+Por padrão, o [sqlx](https://docs.rs/sqlx/latest/sqlx/) cria a pool com apenas 10 conexões, o que é muito pouco.
+Por padrão, o Postgres tem um limite de 100 conexões.
+Dado que algumas conexões são reservadas para fins administrativos, coloquei um limite conservador de 45 conexões para cada instância da API, o que foi suficiente.
+
+Brinquei um pouco também com aumentar o número máximo de conexões permitidas pelo Postgres e também a memória disponível em `shared_buffers`.
+Nas cargas que eu testei, havia memória suficiente para isso.
+Mas, como não consegui comprovar uma melhora de performance, optei por não mexer nisso.
+
+O que sim teve um impacto muito significativo foi pré-alocar as conexões.
+O sqlx, por padrão, abre as conexões de forma lazy: não importa qual seja o máximo disponível, ele só abre novas conexões quando a aplicação tenta fazer uma query e não há conexões disponíveis na pool.
+Isso é um problema quando muitos usuários chegam de uma vez à aplicação.
+Abrir conexões no Postgres é um processo bastante caro, uma vez que é preciso fazer todo o handshake TCP e há ainda o fluxo de autenticação com o banco.
+O que eu observei é que, no momento em que era necessário abrir algumas dezenas de conexões simultaneamente, a latência das queries aumentava dramaticamente (2 ou 3 ordens de magnitude, indo para vários segundos), o que causava erros nos testes.
+Isso foi resolvido garantindo que a maioria das conexões seja aberta já na inicialização da aplicação.
+Isso garante que, quando acontecerem os picos de requisições, não haja latência adicional além daquela intrínseca às queries.
+
 ## Cache
 
 Não tem :)
